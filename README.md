@@ -1,7 +1,7 @@
 # urinary-OARs-segmentation-nnUNet
 
 ## Overview
-This repository hosts the code, trained models, and scripts for a deep learning method based on nnU-Net, designed for automatic segmentation of urinary organs at risk (OARs) and pelvic structures on multicentric prostate MRI. The method targets key structures such as the intraprostatic urethra, bladder trigone, bladder neck, ureters, bladder, rectum, and prostate for prostate cancer radiotherapy planning.
+This repository hosts the code, trained models, and scripts for a deep learning method based on nnU-Net, designed for automatic segmentation of urinary organs at risk (OARs) and pelvic structures on multicentric prostate MRI. The method targets key structures such as the intraprostatic urethra, bladder trigone, bladder neck, bulbous urethra, ureters, bladder, rectum, and prostate for prostate cancer radiotherapy planning.
 
 The model is trained and validated on datasets from multiple centers including MR-linac devices (Unity®, Elekta and MRIdian®, Viewray) and the public PROSTATEx database (Siemens MAGNETOM Trio and Skyra scanners). Evaluation metrics include Dice Similarity Coefficient (DSC), Hausdorff Distance (HD95), and Surface Distance (SD).
 
@@ -51,8 +51,8 @@ example_cases.md         \# Visual examples of segmentations
 ## Installation and Requirements
 
 - Python 3.9+
-- nnU-Net version 2
 - PyTorch with CUDA support
+- nnU-Net version 2 (Please follow the official nnU-Net repository for detailed and up-to-date installation instructions: https://github.com/MIC-DKFZ/nnUNet)
 - SimpleITK, nibabel, medpy, pydicom, rt-utils
   
 ## Data Preparation
@@ -61,7 +61,7 @@ example_cases.md         \# Visual examples of segmentations
 
 ```
 
-DatasetXXX_UrinaryOARs/
+Dataset072_Prostate/
 imagesTr/
 labelsTr/
 imagesTs/ (optional)
@@ -85,7 +85,7 @@ python scripts/prepare_data/convert_dicom_to_nifti.py --input /path/to/dicom/ --
 
 ```
 
-nnUNetv2_plan_and_preprocess -d XXX -c 3d_fullres --verify_dataset_integrity
+nnUNetv2_plan_and_preprocess -d 072 -c 3d_fullres --verify_dataset_integrity
 
 ```
 
@@ -93,7 +93,7 @@ nnUNetv2_plan_and_preprocess -d XXX -c 3d_fullres --verify_dataset_integrity
 
 ```
 
-CUDA_VISIBLE_DEVICES=0 nnUNetv2_train XXX 3d_fullres 0 -tr nnUNetTrainer_UrinaryOARs
+CUDA_VISIBLE_DEVICES=0 nnUNetv2_train 072 3d_fullres 0 -tr nnUNetTrainer_UrinaryOARs
 
 ```
 
@@ -131,7 +131,7 @@ python scripts/inference/convert_prediction_to_rtstruct.py --input /path/to/outp
 
 ## Pre-trained Models
 
-- Pre-trained model weights are available at: [Add your download link here]
+- Pre-trained model weights are available in this repository under the /models directory.
 - Place weights in:
 
 ```
@@ -170,10 +170,9 @@ year={2021}
 ## Limitations and Use
 
 - Intended for research use on multicentric prostate MRI for radiotherapy planning.
-- Validated on specific scanner types and acquisition protocols.
+- Validated on specific MRI systems and acquisition protocols.
 - Manual expert review mandatory before clinical application.
-
-
+- Performance outside the training data domain (different MRI systems, protocols, pathologies) is not guaranteed.
 
 ## License
 
@@ -183,5 +182,5 @@ This project is licensed under the MIT License. It incorporates code from nnU-Ne
 
 Contributions, bug reports, and feature requests are welcome. Please open an issue or pull request.
 
-Contact: your.email@institution.edu
+Contact: miguel.castro@univ-rennes.fr
 ```
