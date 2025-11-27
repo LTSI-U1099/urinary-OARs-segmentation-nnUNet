@@ -3,18 +3,18 @@
 ## Overview
 This repository hosts the code, trained models, and scripts for a deep learning method based on nnU-Net, designed for automatic segmentation of urinary organs at risk (OARs) and pelvic structures on multicentric prostate MRI. The method targets key structures such as the intraprostatic urethra, bladder trigone, bladder neck, bulbous urethra, ureters, bladder, rectum, and prostate for prostate cancer radiotherapy planning.
 
-The model is trained and validated on datasets from multiple centers including MR-linac devices (Unity®, Elekta and MRIdian®, Viewray) and the public PROSTATEx database (Siemens MAGNETOM Trio and Skyra scanners). Evaluation metrics include Dice Similarity Coefficient (DSC), Hausdorff Distance (HD95), and Surface Distance (SD).
+The model is trained and validated on datasets from multiple centers including MR-linac devices (Unity®, Elekta and MRIdian®, Viewray) and the public [PROSTATEx](https://www.cancerimagingarchive.net/collection/prostatex/) database (Siemens MAGNETOM Trio and Skyra MR scanners). Evaluation metrics include Dice Similarity Coefficient (DSC), Hausdorff Distance (HD95), and Surface Distance (SD).
 
 This repository accompanies an ongoing, under-review study on automatic segmentation of urinary organs at risk for prostate cancer radiotherapy and does not yet correspond to a final, published article.
 
 ## Built on nnU-Net
-This project builds upon the powerful and self-configuring nnU-Net framework for medical image segmentation. We implemented a customized 3D full-resolution nnU-Net configuration optimized for segmenting small urinary structures while maintaining anatomical context for larger pelvic organs.
+This project builds upon the powerful and self-configuring [nnU-Net](https://github.com/MIC-DKFZ/nnUNet) framework for medical image segmentation. We implemented a customized 3D full-resolution nnU-Net configuration optimized for segmenting small urinary structures while maintaining anatomical context for larger pelvic organs.
 
 ## Data and Labels
 
 - Multicentric MRI datasets:
   - MR-linac images from Unity® and MRIdian®
-  - PROSTATEx public dataset from Siemens [ref]
+  - [PROSTATEx](https://www.cancerimagingarchive.net/collection/prostatex/)x public dataset from Siemens
 - Imaging modality: T2-weighted MRI
 - Label set:
   - 0: background
