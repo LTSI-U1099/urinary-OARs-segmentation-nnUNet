@@ -70,14 +70,14 @@ dataset.json
 
 - RTstruct contours to NIfTI masks:
 
-Convert RTstruc to NIfTI using [dcm2niix](https://github.com/rordenlab/dcm2niix?tab=readme-ov-file)
-To prepare the dataset, the RTstruc DICOM must be converted to NIfTI format. This can be done using the dcm2niix tool. Below is an example command:
+Convert RTstruc contours to NIfTI masks using [dcm2niix](https://github.com/rordenlab/dcm2niix?tab=readme-ov-file).
+To prepare the dataset, the RTstruc DICOM must be converted to NIfTI format. This can be done using the [dcm2niix](https://github.com/rordenlab/dcm2niix?tab=readme-ov-file) tool. Below is an example command:
 ```
 
 dcm2niix.exe -o "C:\output_folder" -f "%p_%s" -z y "C:\input_folder"
 
 ```
-We used a Python script that leverages the [dcm2niix Python library](https://pypi.org/project/dcm2niix/) to convert RTstruct files into NIfTI format. Below is an example command:
+We used a Python script that leverages the [dcm2niix Python library](https://pypi.org/project/dcm2niix/) to convert RTstruct files into NIfTI format. Below is an example script:
 
 ```
 
@@ -85,14 +85,26 @@ python prepare_data/script_dcmrtstruct2nii.py
 
 ```
 
-The previous routine generates a folder containing individual segmentation masks in NIfTI format. The script merge_masks.py is then used to merge these masks into a single NIfTI segmentation file, assigning the labels as described earlier.
+The previous routine generates a folder containing individual segmentation masks in NIfTI format. The script merge_masks.py consolidates these masks into a single NIfTI segmentation file, assigning the appropriate labels as described earlier.
+To ensure accurate representation of overlapping regions, the original bulbous urethra and membranous urethra masks are split into three distinct masks:
+
+- bulbousurethra: the portion of the bulbous urethra excluding the membranous urethra.
+- membranousurethra: the portion of the membranous urethra excluding the bulbous urethra.
+- internecktrigone: a new mask representing the overlapping region between the bulbous urethra and membranous urethra.
+
 ```
 
 python prepare_data/merge_masks.py 
 
 ```
 
-- Harmonize multi-center data via resampling, N4 bias correction, histogram matching, etc. (see scripts prepare_data/harmonize_data.py)
+- Harmonize multi-center data via resampling, N4 bias correction, anisotropic filtering, histogram matching, etc. (see scripts prepare_data/harmonize_data.py)
+
+```
+
+python prepare_data/harmonize_data.py 
+
+```
 
 ## Training
 
@@ -104,11 +116,11 @@ nnUNetv2_plan_and_preprocess -d 072 -c 3d_fullres --verify_dataset_integrity
 
 ```
 
+
 - Train 5-fold cross-validation models (example for fold 0):
 
 ```
-CUDA_VISIBLE_DEVICES=0 nnUNet_compile=T nnUNet_n_proc_DA=8 nnUNetv2_train -tr nnUNetTrainer_1000epochs -p nnUNetPlans_urethra --npz -num_gpus 1  072 3d_fullres 0
-
+CUDA_VISIBLE_DEVICES=0 nnUNet_compile=T nnUNet_n_proc_DA=8 nnUNetv2_train -tr nnUNetTrainer_1000epochs -p nnUNetPlans --npz -num_gpus 0 072 3d_fullres_my_plan 0
 ```
 
 - Repeat for folds 1 to 4 on available GPUs.
@@ -122,6 +134,15 @@ We have prepared scripts that automate training on two GPUs and enable fine-tuni
 
 ## Inference
 
+Automatically determine the best configuration
+Once the desired configurations were trained (full cross-validation) you can tell nnU-Net to automatically identify the best combination for you:
+
+```
+
+nnUNetv2_find_best_configuration 072 -c 3d_fullres -tr nnUNetTrainer_1000epochs 
+
+```
+
 - Run inference on test data:
 
 ```
@@ -129,17 +150,40 @@ We have prepared scripts that automate training on two GPUs and enable fine-tuni
 CUDA_VISIBLE_DEVICES=0  nnUNet_n_proc_DA=2 nnUNetv2_predict -d Dataset072_Prostate -i /path/to/imagesTs/ -o /path/to/output -f 0 1 2 3 4 -tr nnUNetTrainer_1000epochs -c 3d_fullres -p nnUNetPlans
 
 ```
-
 ## Postprocessing
 
+- Once inference is completed, run postprocessing like this:
 
+```
+nnUNetv2_apply_postprocessing -i OUTPUT_FOLDER -o OUTPUT_FOLDER_PP -pp_pkl_file /scratch/nnUNet_results/Dataset072_Prostate/nnUNetTrainer_1000epochs__nnUNetPlans__3d_fullres_my_plan/crossval_results_folds_0_1_2_3_4/postprocessing.pkl -np 8 -plans_json /scratch/nnUNet_results/Dataset072_Prostate/nnUNetTrainer_1000epochs__nnUNetPlans__3d_fullres_my_plan/crossval_results_folds_0_1_2_3_4/plans.json
+
+```
+
+- We therefore decided to implement a post-processing strategy previously validated by our team, which enables interpolation of the urethral segments along their centerline.
+
+```
+
+python inference/center_line_urethra_v1.py 
+
+```
 
 ## Evaluation
 
+The scripts used for evaluation are located in the evaluation folder.
+
 - Metrics included:
-  - Dice Similarity Coefficient (DSC)
+  - Dice Similarity Coefficient
   - 95th percentile Hausdorff Distance (HD95) measured with MedPy
-  - Mean Surface Distance (SD)
+  - Mean Surface Distance
+  - Volumetric overlap error
+  - Relative volume difference
+
+Example command:
+```
+
+python evaluation/calculs_metriques_prostatex.py 
+
+```
 
 ## Pre-trained Models
 
@@ -148,7 +192,7 @@ CUDA_VISIBLE_DEVICES=0  nnUNet_n_proc_DA=2 nnUNetv2_predict -d Dataset072_Prosta
 
 ```
 
-\$NNUNET_RESULTS/nnUNet/3d_fullres/DatasetXXX_UrinaryOARs/nnUNetTrainer_UrinaryOARs/
+\$NNUNET_RESULTS/Dataset072_Prostate/nnUNetTrainer_1000epochs__nnUNetPlans__3d_fullres_my_plan/fold_all/
 
 ```
 
@@ -166,9 +210,15 @@ python inference/convert_prediction_to_rtstruct.py --input /path/to/output --dic
 2. Run planning and preprocessing
 3. Train model folds
 4. Run inference with ensemble
-5. Evaluate quantitative metrics
+5. Run interpolation of the urethral segments along their centerline
+6. Evaluate quantitative metrics
 
-Full pipeline scripts provided under `/scripts/`
+<div style="background-color:#ffdddd; border-left:6px solid #f44336; padding:10px;">
+<strong>⚠️ Warning:</strong>  
+Please make sure to check all folder and subfolder paths in the scripts.  
+You must adapt these paths according to your own environment before running any code.
+</div>
+
 
 ## How to cite
 
