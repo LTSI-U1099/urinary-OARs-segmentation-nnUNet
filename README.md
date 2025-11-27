@@ -29,6 +29,8 @@ This project builds upon the powerful and self-configuring [nnU-Net](https://git
   - 0: membranousurethra
   - 0: "internecktrigone
 
+![Diagramme](documents/figs/Screenshot1.jpg)
+
 ## Repository Structure
 
 ```
