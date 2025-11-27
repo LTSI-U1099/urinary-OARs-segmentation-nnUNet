@@ -16,38 +16,35 @@ This project builds upon the powerful and self-configuring [nnU-Net](https://git
   - MR-linac images from Unity® and MRIdian®
   - [PROSTATEx](https://www.cancerimagingarchive.net/collection/prostatex/)x public dataset from Siemens
 - Imaging modality: T2-weighted MRI
+
+The labels are derived from manual contours. In some cases, there are overlaps between contours, particularly for labels 8 (bulbous urethra) and 9 (membranous urethra). Therefore, a preprocessing step is required to convert the contours from RTstruct format to NIfTI files before using the segmented images in the CNN. After the segmentation results are obtained, a postprocessing step is necessary to reconstruct the bulbous urethra and membranous urethra structures.
+
 - Label set:
   - 0: background
-  - 0: bladder
-  - 0: prostate
-  - 0: intraprostaticurethra
-  - 0: rectum
-  - 0: ureters
-  - 0: bladderneck
-  - 0: bladdertrigone
-  - 0: bulbousurethra
-  - 0: membranousurethra
-  - 0: "internecktrigone
-
+  - 1: bladder
+  - 2: prostate
+  - 3: intraprostaticurethra
+  - 4: rectum
+  - 5: ureters
+  - 6: bladderneck
+  - 7: bladdertrigone
+  - 8: 8: bulbousurethra (This region is the part of bulbous urethra that does not include membranous urethra)
+  - 9: membranousurethra (This region is the part of membranous urethra that does not include bulbous urethra)
+  - 10: internecktrigone (This region is where bulbous urethra and membranous urethra overlap)
+  
 ![Diagramme](documents/figs/Screenshot1.jpg)
 
 ## Repository Structure
 
 ```
-
-/nnunet/
-/plans/                  \# Custom nnU-Net plans JSON files
+/model/
+/documents/
 /trainers/               \# Custom nnU-Net trainer scripts
+/nnUNetPlans/            \# Custom nnU-Net plans JSON files
 /scripts/
 /prepare_data/           \# Scripts for data conversion and dataset organization
-/training/               \# Scripts to run planning, preprocessing, and training
+/training/               \# Custom nnU-Net trainer scripts
 /inference/              \# Scripts for inference and RTStruct conversion
-/models/
-README_download_models.md \# Instructions and links to pre-trained weights
-/docs/
-metrics_description.md   \# Description of evaluation metrics
-example_cases.md         \# Visual examples of segmentations
-
 ```
 
 ## Installation and Requirements
@@ -71,15 +68,31 @@ dataset.json
 
 ```
 
-- Convert DICOM to NIfTI:
+- RTstruct contours to NIfTI masks:
+
+Convert RTstruc to NIfTI using [dcm2niix](https://github.com/rordenlab/dcm2niix?tab=readme-ov-file)
+To prepare the dataset, the RTstruc DICOM must be converted to NIfTI format. This can be done using the dcm2niix tool. Below is an example command:
+```
+
+dcm2niix.exe -o "C:\output_folder" -f "%p_%s" -z y "C:\input_folder"
+
+```
+We used a Python script that leverages the [dcm2niix Python library](https://pypi.org/project/dcm2niix/) to convert RTstruct files into NIfTI format. Below is an example command:
 
 ```
 
-python scripts/prepare_data/convert_dicom_to_nifti.py --input /path/to/dicom/ --output /path/to/nii/
+python prepare_data/script_dcmrtstruct2nii.py 
 
 ```
 
-- Harmonize multi-center data via resampling, N4 bias correction, histogram matching, etc. (see scripts)
+The previous routine generates a folder containing individual segmentation masks in NIfTI format. The script merge_masks.py is then used to merge these masks into a single NIfTI segmentation file, assigning the labels as described earlier.
+```
+
+python prepare_data/merge_masks.py 
+
+```
+
+- Harmonize multi-center data via resampling, N4 bias correction, histogram matching, etc. (see scripts prepare_data/harmonize_data.py)
 
 ## Training
 
@@ -94,8 +107,7 @@ nnUNetv2_plan_and_preprocess -d 072 -c 3d_fullres --verify_dataset_integrity
 - Train 5-fold cross-validation models (example for fold 0):
 
 ```
-
-CUDA_VISIBLE_DEVICES=0 nnUNetv2_train 072 3d_fullres 0 -tr nnUNetTrainer_UrinaryOARs
+CUDA_VISIBLE_DEVICES=0 nnUNet_compile=T nnUNet_n_proc_DA=8 nnUNetv2_train -tr nnUNetTrainer_1000epochs -p nnUNetPlans_urethra --npz -num_gpus 1  072 3d_fullres 0
 
 ```
 
@@ -106,23 +118,21 @@ CUDA_VISIBLE_DEVICES=0 nnUNetv2_train 072 3d_fullres 0 -tr nnUNetTrainer_Urinary
   - Loss: combination of Dice and Cross-Entropy (optionally boundary loss)
   - Extensive data augmentation applied
 
+We have prepared scripts that automate training on two GPUs and enable fine-tuning from existing checkpoints instead of starting from scratch. These scripts are available in the /prepare_data folder.
+
 ## Inference
 
 - Run inference on test data:
 
 ```
 
-nnUNetv2_predict -i /path/to/imagesTs/ -o /path/to/output/ -d XXX -c 3d_fullres -tr nnUNetTrainer_UrinaryOARs
+CUDA_VISIBLE_DEVICES=0  nnUNet_n_proc_DA=2 nnUNetv2_predict -d Dataset072_Prostate -i /path/to/imagesTs/ -o /path/to/output -f 0 1 2 3 4 -tr nnUNetTrainer_1000epochs -c 3d_fullres -p nnUNetPlans
 
 ```
 
-- Optional: Convert predicted NIfTI masks to DICOM RTStruct for radiotherapy systems:
+## Postprocessing
 
-```
 
-python scripts/inference/convert_prediction_to_rtstruct.py --input /path/to/output --dicom_series /path/to/reference_dicom --output /path/to/rtstruct/
-
-```
 
 ## Evaluation
 
@@ -139,6 +149,14 @@ python scripts/inference/convert_prediction_to_rtstruct.py --input /path/to/outp
 ```
 
 \$NNUNET_RESULTS/nnUNet/3d_fullres/DatasetXXX_UrinaryOARs/nnUNetTrainer_UrinaryOARs/
+
+```
+
+- Optional: Convert predicted NIfTI masks to DICOM RTStruct for radiotherapy systems:
+
+```
+
+python inference/convert_prediction_to_rtstruct.py --input /path/to/output --dicom_series /path/to/reference_dicom --output /path/to/rtstruct/
 
 ```
 
