@@ -1,0 +1,22 @@
+{
+    "channel_names": {
+        "0": "T2"
+    },
+    "labels": {
+        "background": 0,
+        "bladder": 1,
+        "prostate": 2,
+        "intraprostaticurethra": 3,
+        "rectum": 4,
+        "ureters": 5,
+        "bladderneck": 6,
+        "bladdertrigone": 7,
+        "bulbousurethra": 8,
+        "membranousurethra": 9,
+        "internecktrigone": 10
+
+    },
+    "numTraining": 307,
+    "file_ending": ".nii.gz",
+    "name": "Dataset062_Prostate"
+}

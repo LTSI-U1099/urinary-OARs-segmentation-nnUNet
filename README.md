@@ -7,6 +7,8 @@ The model is trained and validated on datasets from multiple centers including M
 
 This repository accompanies an ongoing, under-review study on automatic segmentation of urinary organs at risk for prostate cancer radiotherapy and does not yet correspond to a final, published article.
 
+The accompanying model weights for this repository can be downloaded here at:  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17749634.svg)](https://doi.org/10.5281/zenodo.17749634)
+
 ## Built on nnU-Net
 This project builds upon the powerful and self-configuring [nnU-Net](https://github.com/MIC-DKFZ/nnUNet) framework for medical image segmentation. We implemented a customized 3D full-resolution nnU-Net configuration optimized for segmenting small urinary structures while maintaining anatomical context for larger pelvic organs.
 
@@ -37,7 +39,6 @@ The labels are derived from manual contours. In some cases, there are overlaps b
 ## Repository Structure
 
 ```
-/model/
 /documents/
 /trainers/               \# Custom nnU-Net trainer scripts
 /nnUNetPlans/            \# Custom nnU-Net plans JSON files
@@ -187,7 +188,7 @@ python evaluation/calculs_metriques_prostatex.py
 
 ## Pre-trained Models
 
-- Pre-trained model weights are available in this repository under the /models directory.
+- Pre-trained model weights can be downloaded here at:   [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17749634.svg)](https://doi.org/10.5281/zenodo.17749634).
 - Place weights in:
 
 ```
