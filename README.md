@@ -223,7 +223,22 @@ You must adapt these paths according to your own environment before running any 
 
 ## How to cite
 
-This work is currently under review; citation details will be updated after publication.
+This work has been published.  If you use this code or models in your research, please cite:
+
+```
+
+@article{LeGuévelou2025nnuNet,
+title={Geometric evaluation of a deep learning method for segmentation of urinary OARs on magnetic resonance imaging for prostate cancer radiotherapy},
+author={J Le Guévelou, M Castro, B Texier, A Barateau, R-A Martin, C Lafond, I Bessières, J-C Nunes, R De Crevoisier, O Acosta},
+journal={Clinical and Translational Radiation Oncology},
+year={2026}
+volume={56}
+ISSN 2405-6308,
+https://doi.org/10.1016/j.ctro.2025.101091.
+(https://www.sciencedirect.com/science/article/pii/S2405630825001831)
+}
+
+```
 
 Please also cite the original nnU-Net paper:
 
